@@ -11,6 +11,8 @@ import mongoengine
 from config import Config
 import json
 import random
+import time
+import threading
 
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
@@ -36,6 +38,7 @@ def fortune():
         response = dict(host_conf=host_conf, result=selected_line)
         print "line selected : " +selected_line
         i=0
+        #time.sleep(2)
         #nb = raw_input('Choose a number: ')
 
         return json.dumps(response)
@@ -43,6 +46,8 @@ def fortune():
         #selected_line = random.choice(open(config.fortune_service.path_file_fortunes, 'r').readlines()) #No close in that call since file closes automatically after call.
         response = dict(ok=False)#, result=selected_line)
         return json.dumps(response)
+
+#def monitorDaemon():
 
 
 
@@ -55,5 +60,5 @@ if __name__ == "__main__":
     http_server.listen(port)
     host_conf = {'ip': ip, 'port':int(port)}
     IOLoop.instance().start()
-    # app.run(host=config.fortune_service.ip, port=config.fortune_service.port, debug=True)
+    #app.run(host=ip, port=int(port), debug=True)
    # app.run(host=config.fortune_service.ip, port=int(port), debug=True)

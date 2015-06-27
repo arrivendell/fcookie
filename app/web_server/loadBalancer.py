@@ -3,6 +3,7 @@ import getopt
 import string
 import sys
 import time
+import threading
 
 import json
 
@@ -27,6 +28,7 @@ class ServersManager:
     def addServer(self):
         if self.number < len(self.possible_servers) :
             self.available_servers.append(self.possible_servers[self.number+1])
+            self.in_use_servers.append(self.possible_servers[self.number+1])
             cust_logger.info("Adding new server host :%s port: %d" % (self.possible_servers[self.number+1]['ip'],  self.possible_servers[self.number+1]['port']))
             self.number+=1
             return self.possible_servers[self.number]
@@ -47,7 +49,11 @@ class ProxyHttpClient(protocol.Protocol):
 
     def dataReceived(self, data):
         self.data = data
-        sender = json.loads(self.data[self.data.find('{'):])['host_conf']
+        try :
+            sender = json.loads(self.data[self.data.find('{'):])['host_conf']
+        except ValueError :
+            cust_logger.warning("json loading failed : %s" % self.data[self.data.find('{'):])
+            return
         sender = {'ip':sender['ip'], 'port':int(sender['port'])}
         cust_logger.info("response server :" + self.data)
         #we check if the server sending us the answer is in the servers we use, not add him to the available list if not
@@ -89,6 +95,7 @@ class ProxyHttpServer(protocol.Protocol):
                     cust_logger.warning("Add server failed, no more servers to add")
                     #while(len(self.factory.servers_manager.available_servers) == 0):
                      #   pass
+                    return
 
                 self.factory.servers_manager.available_servers.remove(client_param)
 
@@ -107,6 +114,12 @@ class ProxyHttpServerFactory(protocol.ServerFactory):
 
     def __init__(self, servers_manager):
         self.servers_manager = servers_manager
+
+def monitorDaemon():
+    cust_logger.info("Starting monitor Daemon")
+    time.sleep(2)
+    cust_logger.info("Exiting monitor Daemon")
+
 
 def main():
     cust_logger.add_file("log/logFile")
