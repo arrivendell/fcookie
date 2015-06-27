@@ -6,6 +6,8 @@ sys.path.append('..')
 sys.path.append('../../libs')
 sys.path.append('../..')
 
+import string
+import getopt
 from flask import Flask, render_template,request
 import mongoengine
 from config import Config
@@ -13,6 +15,7 @@ import json
 import random
 import time
 import threading
+import socket
 
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
@@ -38,7 +41,7 @@ def fortune():
         response = dict(host_conf=host_conf, result=selected_line)
         print "line selected : " +selected_line
         i=0
-        #time.sleep(2)
+        time.sleep(2)
         #nb = raw_input('Choose a number: ')
 
         return json.dumps(response)
@@ -47,18 +50,32 @@ def fortune():
         response = dict(ok=False)#, result=selected_line)
         return json.dumps(response)
 
-#def monitorDaemon():
+def monitorDaemon(serverIp, serverPort,loadBalIP, loadBalPort):
+    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    hbSocket.sendto("add_server#%s#%d"%(serverIp, serverPort), (loadBalIP, loadBalPort))
 
 
 
 
 if __name__ == "__main__":
-    ip = sys.argv[1]
-    port = sys.argv[2]
+    (options, args) = getopt.getopt(sys.argv[1:], "s:l:h",
+        ["source=", "loadBal=", "help"])
+    sourcePort, loadBalIP, loadBalPort = None, None, None
+    for opt, val in options:
+        if (opt in ("-s", "--source")):
+            sourcePort = int(val)
+        if (opt in ("-l", "--loadBal")):
+            (loadBalIP, loadBalPort) = val.split(":")
+            daemon_thread = threading.Thread(name='monitor', target=monitorDaemon, args=("localhost",sourcePort,loadBalIP, int(loadBalPort)))
+            daemon_thread.setDaemon(True)
+            daemon_thread.start()
+    ip = "localhost"
+
+    
 
     http_server = HTTPServer(WSGIContainer(app))
-    http_server.listen(port)
-    host_conf = {'ip': ip, 'port':int(port)}
+    http_server.listen(sourcePort)
+    host_conf = {'ip': ip, 'port':int(sourcePort)}
     IOLoop.instance().start()
     #app.run(host=ip, port=int(port), debug=True)
    # app.run(host=config.fortune_service.ip, port=int(port), debug=True)

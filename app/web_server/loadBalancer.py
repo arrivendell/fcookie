@@ -72,8 +72,10 @@ class ProxyHttpServer(protocol.Protocol):
 
     def dataReceived(self, data):
         self.data = data
+        print data
         #if a server shows up
         if self.data.startswith("add_server"):
+            cust_logger.info("Received new server notification")
             _, server_ip, server_port = self.data.split('#')
             self.factory.targets.append({'ip': server_ip, 'port': server_port})
         else :
@@ -115,11 +117,27 @@ class ProxyHttpServerFactory(protocol.ServerFactory):
     def __init__(self, servers_manager):
         self.servers_manager = servers_manager
 
-def monitorDaemon():
-    cust_logger.info("Starting monitor Daemon")
-    time.sleep(2)
-    cust_logger.info("Exiting monitor Daemon")
+class UdpProtocol(protocol.DatagramProtocol):
 
+    def __init__(self, servers_manager):
+        self.servers_manager = servers_manager
+
+
+    def datagramReceived(self, data, (host, port)):
+        if data.startswith("add_server"):
+            cust_logger.info("Received new server notification")
+            _, server_ip, server_port = data.split('#')
+            self.servers_manager.possible_servers.append({'ip': server_ip, 'port': int(server_port)})
+        
+
+
+def monitorDaemon(servers_manager,i):
+    pass#ust_logger.info("Starting monitor Daemon")
+    #
+    #r#eactor.listenUDP(8001, UdpProtocol())
+    #r#eactor.run()
+    #c#ust_logger.info("Exiting monitor Daemon")
+#
 
 def main():
     cust_logger.add_file("log/logFile")
@@ -131,9 +149,18 @@ def main():
             sourcePort = int(argval)
         if (option in ("-t", "--target")):
             (targetHost, targetPort, target2) = string.split(argval, ":")
-        # remember no defaults?
-    # start twisted reactor
+
+    # initialize servers manager 
     servers_manager = ServersManager([{'ip': targetHost , 'port': int(targetPort)}, {'ip': targetHost , 'port': int(target2)}], [{'ip': targetHost , 'port': int(targetPort)}])
+    
+    #start daemon
+    daemon_thread = threading.Thread(name='monitor', target=monitorDaemon, args=(servers_manager,2))
+    daemon_thread.setDaemon(True)
+    daemon_thread.start()
+#
+
+    # start the twisted reactor
+    reactor.listenUDP(8001, UdpProtocol(servers_manager))
     reactor.listenTCP(sourcePort,
     ProxyHttpServerFactory(servers_manager))
     reactor.run()
