@@ -1,0 +1,38 @@
+2015-06-27 19:10:09,742 - INFO: request client :GET /fortune HTTP/1.1
+Host: 127.0.0.1:8003
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2015-06-27 19:10:09,744 - INFO: response server :HTTP/1.1 200 OK
+Content-Length: 119
+Content-Type: text/html; charset=utf-8
+Server: TornadoServer/4.2
+
+{"host_conf": {"ip": "localhost", "port": "5000"}, "result": "You try hard, never to fail. You don't, never to win.\n"}
+2015-06-27 19:10:09,744 - WARNING: Received a response from an unhandled server host : localhost port: 5000
+2015-06-27 19:10:20,440 - INFO: No more available server, adding one server
+2015-06-27 19:10:20,445 - INFO: Adding new server host :localhost port: 5001
+2015-06-27 19:10:20,446 - INFO: request client :GET /fortune HTTP/1.1
+Host: 127.0.0.1:8003
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2015-06-27 19:10:20,451 - INFO: response server :HTTP/1.1 200 OK
+Content-Length: 105
+Content-Type: text/html; charset=utf-8
+Server: TornadoServer/4.2
+
+{"host_conf": {"ip": "localhost", "port": "5001"}, "result": "The object of your desire comes closer.\n"}
+2015-06-27 19:10:20,452 - WARNING: Received a response from an unhandled server host : localhost port: 5001
+2015-06-27 19:10:21,803 - INFO: No more available server, adding one server
+2015-06-27 19:10:21,803 - WARNING: Add server failed, no more servers to add
+2015-06-27 19:10:22,293 - INFO: No more available server, adding one server
+2015-06-27 19:10:22,293 - WARNING: Add server failed, no more servers to add

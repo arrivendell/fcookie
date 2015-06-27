@@ -1,0 +1,48 @@
+2015-06-27 16:01:29,966 - INFO: request client :GET /fortune HTTP/1.1
+Host: 127.0.0.1:8001
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2015-06-27 16:01:29,969 - INFO: response server :HTTP/1.1 200 OK
+Content-Length: 42
+Content-Type: text/html; charset=utf-8
+Server: TornadoServer/4.2
+
+"People are naturally attracted to you.\n"
+2015-06-27 16:01:31,920 - INFO: No more available server, adding one server
+2015-06-27 16:01:31,920 - INFO: Adding new server : host :localhost port: 5001
+2015-06-27 16:01:31,920 - INFO: request client :GET /fortune HTTP/1.1
+Host: 127.0.0.1:8001
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2015-06-27 16:01:31,922 - INFO: response server :HTTP/1.1 200 OK
+Content-Length: 36
+Content-Type: text/html; charset=utf-8
+Server: TornadoServer/4.2
+
+"Serious trouble will bypass you.\n"
+2015-06-27 16:01:33,543 - INFO: request client :GET /fortune HTTP/1.1
+Host: 127.0.0.1:8001
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2015-06-27 16:01:33,545 - INFO: response server :HTTP/1.1 200 OK
+Content-Length: 72
+Content-Type: text/html; charset=utf-8
+Server: TornadoServer/4.2
+
+"Fear can keep us up all night long, but faith makes one fine pillow.\n"
+2015-06-27 16:01:35,753 - INFO: No more available server, adding one server

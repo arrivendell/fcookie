@@ -5,7 +5,7 @@ class Config:
     class FortuneService:
         def __init__(self):
             self.ip = "127.0.0.1"
-            self.port=5000
+            self.port=5001
             self.path_file_fortunes = "web_server/static/fortunes/fortunes.txt"
 
 
