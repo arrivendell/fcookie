@@ -17,10 +17,6 @@ import httplib
 app = Flask(__name__)
 app.debug = True
 config = Config()
-SIZE_BUFFER_HB = 16
-HB_DATAGRAM = "heartbeat"
-TIMEOUT_HB=10
-PERIOD_CHECK_HB =3
 
 
 @app.route('/')
@@ -28,130 +24,10 @@ def index():
     return render_template('index.html', user=user)
         
 
-def monitorDaemon():
-    pass
-class Heartbeats(dict):
-    def __init__(self):
-        super(Heartbeats, self).__init__()
-        self._lock = threading.Lock()
-
-    def __setitem__(self, key, value):
-        self._lock.acquire()
-        super(Heartbeats, self).__setitem__(key,value)
-        self._lock.release()
-
-    @property
-    def listTimedOut(self):
-        time_limit= time.time() - TIMEOUT_HB
-        self._lock.acquire()
-        list_timed_out = [{'ip':ip, 'port':port} for (ip, port), valtime in self.items() if valtime < time_limit]
-        self._lock.release()
-        return list_timed_out
-
-class ListenerHeartBeat(threading.Thread):
-    def __init__(self, event_thread, heartbeats):
-        super(ListenerHeartBeat, self).__init__()
-        self.heartbeats = heartbeats
-        self.event_thread = event_thread
-        self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.listen_socket.settimeout(TIMEOUT_HB)
-        self.listen_socket.bind((socket.gethostbyname(config.health_monitor.ip), config.health_monitor.port_hb))
-
-
-    def run(self):
-        while self.event_thread.isSet():
-            try:
-                datagram, sender = self.listen_socket.recvfrom(SIZE_BUFFER_HB)
-                if datagram.startswith(HB_DATAGRAM) :
-                    print " received Datagram !"
-                    _,port_sender = datagram.split('#')
-                    self.heartbeats[(sender[0], int(port_sender))] = time.time()
-                    web_service = WebServiceMonitor.objects(web_server_ip=sender[0], web_server_port = int(port_sender)).first()
-                    if not web_service :
-                        web_service = WebServiceMonitor(web_server_ip=sender[0], web_server_port = int(port_sender))
-                    web_service.status_monitor = StatusWebService.STATUS_BEATING
-                    web_service.save()
-            except socket.timeout:
-                pass
-
-def heartBeatDaemon(heartbeats):
-    event_thread = threading.Event()
-    event_thread.set()
-    listener = ListenerHeartBeat(event_thread, heartbeats)
-    listener.start()
-    try:
-        while True:
-            list_timed_out = heartbeats.listTimedOut
-            print list_timed_out
-            for (ip, port) in list_timed_out:
-                web_service = WebServiceMonitor.objects(web_server_ip=ip, web_server_port = port).first()
-                web_service.status_monitor = StatusWebService.STATUS_LOST
-                web_service.save()
-            time.sleep(PERIOD_CHECK_HB)
-    except ValueError:
-        pass
-
-def checksDaemon(heartbeats):
-    old_status=None
-    while(True):
-        for url_to_check,ws in [ ("%s:%d"%(ws[0],ws[1]),ws) for ws in heartbeats]:
-            try:     
-                connexion = httplib.HTTPConnection(url_to_check,timeout=5)
-                connexion.request("GET", "/fortune")
-                time_before = time.time()
-                res = connexion.getresponse()
-                response_time = time.time()-time_before
-                print res.status, res.reason, url_to_check, response_time
-                if old_status is None:
-                    old_status = res.status
-                elif old_status != res.status:
-                    print  ("%s has changed from %s to %s" % (url_to_check, old_status, res.status))
-                    print  ("%s has changed status" % (url_to_check))
-                    old_status=res.status
-                else:
-                    print url_to_check, 'is still the same', url_to_check, 'and', res.status
-                    ws_db = WebServiceMonitor.objects(web_server_ip=ws[0], web_server_port=ws[1]).first()
-                    if ws_db:
-                        ws_db.status_service = res.status
-                        ws_db.response_time = response_time
-                        ws_db.successfull_calls +=1
-                        ws_db.save()
-            except httplib.BadStatusLine:
-                ws_db = WebServiceMonitor.objects(web_server_ip=ws[0], web_server_port=ws[1]).first()
-                if ws_db:
-                    ws_db.status_service = -1
-                    ws_db.save()
-                print "BAD STATUS"
-            except StandardError:
-                ws_db = WebServiceMonitor.objects(web_server_ip=ws[0], web_server_port=ws[1]).first()
-                if ws_db:
-                    ws_db.status_service = -1
-                    ws_db.save()
-                print "standard error"
-
-
-        time.sleep(5)
-
- 
- 
-
-def sendNotificationToLB(monitor_ip, monitor_port, ip_lb, port_lb):
-    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    hbSocket.sendto("request_monitor#%s#%d"%(monitor_ip, monitor_port), (ip_lb, port_lb))
-
 if __name__ == "__main__":
     #if len(sys.argv) > 1: 
     #    config = GlobalConfig.from_json(sys.argv[1])
 
     db = mongoengine.connect(config.health_monitor.mongo_db)
 
-    heartbeats = Heartbeats()
-    heartbeat_thread = threading.Thread(name='hb_daemon', target=heartBeatDaemon, args=([heartbeats]))
-    heartbeat_thread.setDaemon(True)
-    heartbeat_thread.start()
-
-    check_daemon = threading.Thread(name='checks_daemon', target=checksDaemon, args=([heartbeats]))
-    check_daemon.setDaemon(True)
-    check_daemon.start()
-    sendNotificationToLB("localhost", 6000, "localhost", 8001)
     app.run(host="0.0.0.0", port=config.health_monitor.port, debug=True, use_reloader=False)

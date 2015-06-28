@@ -14,13 +14,21 @@ sys.path.append('../..')
 from twisted.internet import protocol
 from twisted.internet import reactor
 from logger import CustomLogger
+from config import Config
 import random
 #logger for this module
 cust_logger = CustomLogger("loadBalancer")
 servers_manager = None
+monitors = []
+config = Config()
+
 class ServersManager:
     def __init__(self, possible_servers, in_use_servers):
         self.available_servers = in_use_servers[:] #initialized with the in use servers
+        #we show the initialization for better debug
+        cust_logger.info("ServerManager initialized with possible_servers: %s"%', '.join(["%s:%d/%d"%(server['ip'], server['port'], server['monitor_port']) for server in possible_servers]))
+        cust_logger.info("ServerManager initialized with in use servers: %s"%', '.join(["%s:%d/%d"%(server['ip'], server['port'], server['monitor_port']) for server in in_use_servers]))
+
         self.in_use_servers = in_use_servers
         self.possible_servers = possible_servers
         self.number = 0
@@ -31,6 +39,8 @@ class ServersManager:
             self.in_use_servers.append(self.possible_servers[self.number+1])
             cust_logger.info("Adding new server host :%s port: %d" % (self.possible_servers[self.number+1]['ip'],  self.possible_servers[self.number+1]['port']))
             self.number+=1
+            for monitor in monitors:
+                sendListServers(self, monitor['ip'], monitor['port'])
             return self.possible_servers[self.number]
         else :
             cust_logger.warning("No more servers to add")
@@ -52,10 +62,10 @@ class ProxyHttpClient(protocol.Protocol):
         try :
             sender = json.loads(self.data[self.data.find('{'):])['host_conf']
         except ValueError :
-            cust_logger.warning("json loading failed : %s" % self.data[self.data.find('{'):])
+            cust_logger.warning("json loading failed: %s" % self.data[self.data.find('{'):])
             return
         sender = {'ip':sender['ip'], 'port':int(sender['port'])}
-        cust_logger.info("response server :" + self.data)
+        cust_logger.info("response server: " + ' '.join(self.data.split('\r\n')))
         #we check if the server sending us the answer is in the servers we use, not add him to the available list if not
         if sender not in self.servers_manager.in_use_servers:
             cust_logger.warning("Received a response from an unhandled server host : %s port: %d" % (sender['ip'], int(sender['port'])))
@@ -100,8 +110,8 @@ class ProxyHttpServer(protocol.Protocol):
                     return
 
                 self.factory.servers_manager.available_servers.remove(client_param)
-
-            cust_logger.info("request client :" + self.data)
+            #we log the request in one line only by removing the linebreaks
+            cust_logger.info("request client: " + ' '.join(self.data.split('\r\n')))
             client = protocol.ClientCreator(reactor, ProxyHttpClient, self.transport, self.factory.servers_manager)
             d = client.connectTCP(client_param['ip'],client_param['port'] )
             d.addCallback(self.forwardToClient, client)
@@ -117,6 +127,17 @@ class ProxyHttpServerFactory(protocol.ServerFactory):
     def __init__(self, servers_manager):
         self.servers_manager = servers_manager
 
+def sendListServers(servers_manager,monitor_ip, monitor_port):
+    cust_logger.info("Sending list to monitor %s:%d"%(monitor_ip, int(monitor_port)))
+    udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udpSocket.sendto("list_servers#%s"%json.dumps(servers_manager.in_use_servers), (monitor_ip,int(monitor_port)))
+
+def sendMonitorToServers(servers_manager,monitor):
+    for server in servers_manager.in_use_servers:
+        cust_logger.info("Sending monitor %s:%d to servers"%(monitor['ip'], monitor['port']))
+        udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udpSocket.sendto("add_monitor#%s#%d"%(monitor['ip'], monitor['port']), (server['ip'],server['monitor_port']))
+
 class UdpProtocol(protocol.DatagramProtocol):
 
     def __init__(self, servers_manager):
@@ -126,14 +147,17 @@ class UdpProtocol(protocol.DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
         if data.startswith("add_server"):
             cust_logger.info("Received new server notification")
-            _, server_ip, server_port = data.split('#')
-            self.servers_manager.possible_servers.append({'ip': server_ip, 'port': int(server_port)})
+            _, server_ip, server_port, server_monitor_port = data.split('#')
+            self.servers_manager.possible_servers.append({'ip': server_ip, 'port': int(server_port), 'monitor_port':int(server_monitor_port)})
         elif data.startswith("request_monitor"):
             cust_logger.info("Received packet from monitor")
             _, monitor_ip, monitor_port = data.split('#')
-            cust_logger.info("Sending list to monitor %s:%d"%(monitor_ip, int(monitor_port)))
-            hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            hbSocket.sendto(json.dumps(self.servers_manager.in_use_servers), (monitor_ip,int(monitor_port)))
+            new_monitor = dict(ip=monitor_ip, port=int(monitor_port))
+            if new_monitor not in monitors:
+                cust_logger.info("Adding new monitor %s:%d to list"%(monitor_ip, int(monitor_port)))
+                monitors.append(new_monitor)
+                sendMonitorToServers(self.servers_manager, new_monitor)
+            sendListServers(self.servers_manager, monitor_ip, monitor_port)
 
 
 def monitorDaemon(servers_manager,i):
@@ -145,7 +169,7 @@ def monitorDaemon(servers_manager,i):
 #
 
 def main():
-    cust_logger.add_file("log/logFile")
+    path_file_log = cust_logger.add_file("log/logFile")
     (opts, args) = getopt.getopt(sys.argv[1:], "s:t:h",
         ["source=", "target=", "help"])
     sourcePort, targetHost, targetPort, target2 = None, None, None, None
@@ -156,7 +180,8 @@ def main():
             (targetHost, targetPort, target2) = string.split(argval, ":")
 
     # initialize servers manager 
-    servers_manager = ServersManager([{'ip': targetHost , 'port': int(targetPort)}, {'ip': targetHost , 'port': int(target2)}], [{'ip': targetHost , 'port': int(targetPort)}])
+    possible_servers = json.load(open(config.load_bal_monitor.path_config))['possible_servers']
+    servers_manager = ServersManager(possible_servers, [possible_servers[0], possible_servers[1]])
     
     #start daemon
     daemon_thread = threading.Thread(name='monitor', target=monitorDaemon, args=(servers_manager,2))

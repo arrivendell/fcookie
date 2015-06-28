@@ -1,0 +1,24 @@
+{
+    "possible_servers": [
+        {
+            "ip": "localhost", 
+            "monitor_port": 5500, 
+            "port": 5000
+        }, 
+        {
+            "ip": "localhost", 
+            "monitor_port": 5501, 
+            "port": 5001
+        }, 
+        {
+            "ip": "localhost", 
+            "monitor_port": 5502, 
+            "port": 5002
+        }, 
+        {
+            "ip": "localhost", 
+            "monitor_port": 5503, 
+            "port": 5003
+        }
+    ]
+}

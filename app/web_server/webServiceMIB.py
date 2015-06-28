@@ -1,11 +1,19 @@
 import datetime
 import mongoengine
 
+class StatusWebService:
+    STATUS_LOST = "UNREACHABLE"
+    STATUS_BEATING = "RUNNING"
+    STATUS_UP = "UP"
+    STATUS_UNKNOWN = "UNKNOWN"
+
 class WebServiceMIB(mongoengine.Document):
+    port = mongoengine.IntField(required=True)
     status = mongoengine.StringField(default="UNKNOWN") #status can be UNKNOWN, RUNNING, FAULTY, UNREACHABLE
-    
     response_time = mongoengine.FloatField(default=0.0)
     av_response_time = mongoengine.FloatField(default=0.0)
+    log_file_path = mongoengine.StringField(default="")
+    last_excpt_raised = mongoengine.StringField(default="")
 
     #def __repr__(self):
      #   return "ip = "

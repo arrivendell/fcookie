@@ -41,6 +41,7 @@ class CustomLogger:
         hdlr.setFormatter(self.formatter)
         hdlr.setLevel(logging.INFO)
         self.logger.addHandler(hdlr)
+        return dest_log
 
     def exception(self,e):
         """
@@ -53,16 +54,16 @@ class CustomLogger:
         """
         Write an error message in the console and the log file
         """
-        self.logger.log(logging.ERROR, message)
+        self.logger.log(logging.ERROR, message.rstrip("\r\n"))
 
     def info(self,message):
         """
         Write an info message in the console and the log file
         """
-        self.logger.log(logging.INFO, message)
+        self.logger.log(logging.INFO, message.rstrip("\r\n"))
 
     def warning(self,message):
         """
         Write a warning message in the console and the log file
         """
-        self.logger.log(logging.WARNING, message)
+        self.logger.log(logging.WARNING, message.rstrip("\r\n"))
