@@ -21,6 +21,7 @@ class Config:
             self.ip = "127.0.0.1"
             self.port=7000
             self.mongo_db = "monitoring_service"
+            self.port_hb = 7006
 
 
     def __init__(self):

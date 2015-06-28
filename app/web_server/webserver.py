@@ -27,6 +27,8 @@ app = Flask(__name__)
 app.debug = True
 config = Config()
 host_conf = None
+monitors = [dict(ip="localhost", port=7006)]
+PERIOD_BEAT = 3
 ## Main pages
 @app.route('/')
 def index():
@@ -50,32 +52,41 @@ def fortune():
         response = dict(ok=False)#, result=selected_line)
         return json.dumps(response)
 
-def monitorDaemon(serverIp, serverPort,loadBalIP, loadBalPort):
-    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    hbSocket.sendto("add_server#%s#%d"%(serverIp, serverPort), (loadBalIP, loadBalPort))
+#def monitorDaemon(server_ip, server_port,load_bal_ip, load_bal_port):
+    
 
-
-
+def heartbeatDaemon(source_port,monitors_received):
+    while True:
+        hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        for monitor in monitors_received:
+            hbSocket.sendto("heartbeat#%d"%int(source_port), (monitor['ip'],int(monitor['port'])))
+        time.sleep(PERIOD_BEAT)
 
 if __name__ == "__main__":
     (options, args) = getopt.getopt(sys.argv[1:], "s:l:h",
         ["source=", "loadBal=", "help"])
-    sourcePort, loadBalIP, loadBalPort = None, None, None
+    source_port, load_bal_ip, load_bal_port = None, None, None
     for opt, val in options:
         if (opt in ("-s", "--source")):
-            sourcePort = int(val)
+            source_port = int(val)
         if (opt in ("-l", "--loadBal")):
-            (loadBalIP, loadBalPort) = val.split(":")
-            daemon_thread = threading.Thread(name='monitor', target=monitorDaemon, args=("localhost",sourcePort,loadBalIP, int(loadBalPort)))
-            daemon_thread.setDaemon(True)
-            daemon_thread.start()
+            (load_bal_ip, load_bal_port) = val.split(":")
+            #send notification to load_balancer
+            hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            hbSocket.sendto("add_server#%s#%d"%("localhost", source_port), (load_bal_ip, load_bal_port))
     ip = "localhost"
 
-    
+    heartbeat_thread = threading.Thread(name='heartbeat', target=heartbeatDaemon, args=(source_port,monitors)) #Care about lists as arguments, if not in [] then list is split
+    heartbeat_thread.setDaemon(True)
+    heartbeat_thread.start()
+
+    db = mongoengine.connect("%s#%d"%(ip,source_port))
+    #db.dropdatabase("%s#%d"%(ip,source_port))
+
 
     http_server = HTTPServer(WSGIContainer(app))
-    http_server.listen(sourcePort)
-    host_conf = {'ip': ip, 'port':int(sourcePort)}
+    http_server.listen(source_port)
+    host_conf = {'ip': ip, 'port':int(source_port)}
     IOLoop.instance().start()
     #app.run(host=ip, port=int(port), debug=True)
    # app.run(host=config.fortune_service.ip, port=int(port), debug=True)

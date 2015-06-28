@@ -128,7 +128,12 @@ class UdpProtocol(protocol.DatagramProtocol):
             cust_logger.info("Received new server notification")
             _, server_ip, server_port = data.split('#')
             self.servers_manager.possible_servers.append({'ip': server_ip, 'port': int(server_port)})
-        
+        elif data.startswith("request_monitor"):
+            cust_logger.info("Received packet from monitor")
+            _, monitor_ip, monitor_port = data.split('#')
+            cust_logger.info("Sending list to monitor %s:#d"%(monitor_ip, monitor_port))
+            hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            hbSocket.sendto(json.dumps(self.servers_manager.in_use_servers, (monitor_ip, monitor_port)))
 
 
 def monitorDaemon(servers_manager,i):
