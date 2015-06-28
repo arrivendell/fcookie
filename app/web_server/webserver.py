@@ -27,7 +27,7 @@ app = Flask(__name__)
 app.debug = True
 config = Config()
 host_conf = None
-monitors = [dict(ip="localhost", port=7006)]
+monitors = [dict(ip="localhost", port=7011)]
 PERIOD_BEAT = 3
 ## Main pages
 @app.route('/')
@@ -43,6 +43,7 @@ def fortune():
         response = dict(host_conf=host_conf, result=selected_line)
         print "line selected : " +selected_line
         i=0
+        #simulate long execution
         time.sleep(2)
         #nb = raw_input('Choose a number: ')
 

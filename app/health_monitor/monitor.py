@@ -7,10 +7,11 @@ sys.path.append('../../libs')
 from config import Config
 from flask import Flask, render_template
 from twisted.internet import protocol
-from mongoWebMonitor import WebServiceMonitor
+from mongoWebMonitor import WebServiceMonitor, StatusWebService
 import mongoengine
 import threading, time
 import socket
+import httplib
 
 ## Initializing the app
 app = Flask(__name__)
@@ -20,9 +21,7 @@ SIZE_BUFFER_HB = 16
 HB_DATAGRAM = "heartbeat"
 TIMEOUT_HB=10
 PERIOD_CHECK_HB =3
-STATUS_LOST = "UNREACHABLE"
-STATUS_BEATING = "RUNNING"
-STATUS_UNKNOWN = "UNKNOWN"
+
 
 @app.route('/')
 def index():
@@ -70,15 +69,14 @@ class ListenerHeartBeat(threading.Thread):
                     web_service = WebServiceMonitor.objects(web_server_ip=sender[0], web_server_port = int(port_sender)).first()
                     if not web_service :
                         web_service = WebServiceMonitor(web_server_ip=sender[0], web_server_port = int(port_sender))
-                    web_service.status_monitor = STATUS_BEATING
+                    web_service.status_monitor = StatusWebService.STATUS_BEATING
                     web_service.save()
             except socket.timeout:
                 pass
 
-def heartBeatDaemon():
+def heartBeatDaemon(heartbeats):
     event_thread = threading.Event()
     event_thread.set()
-    heartbeats = Heartbeats()
     listener = ListenerHeartBeat(event_thread, heartbeats)
     listener.start()
     try:
@@ -87,13 +85,55 @@ def heartBeatDaemon():
             print list_timed_out
             for (ip, port) in list_timed_out:
                 web_service = WebServiceMonitor.objects(web_server_ip=ip, web_server_port = port).first()
-                web_service.status_monitor = STATUS_LOST
+                web_service.status_monitor = StatusWebService.STATUS_LOST
                 web_service.save()
             time.sleep(PERIOD_CHECK_HB)
     except ValueError:
         pass
 
+def checksDaemon(heartbeats):
+    old_status=None
+    while(True):
+        for url_to_check,ws in [ ("%s:%d"%(ws[0],ws[1]),ws) for ws in heartbeats]:
+            try:     
+                connexion = httplib.HTTPConnection(url_to_check,timeout=5)
+                connexion.request("GET", "/fortune")
+                time_before = time.time()
+                res = connexion.getresponse()
+                response_time = time.time()-time_before
+                print res.status, res.reason, url_to_check, response_time
+                if old_status is None:
+                    old_status = res.status
+                elif old_status != res.status:
+                    print  ("%s has changed from %s to %s" % (url_to_check, old_status, res.status))
+                    print  ("%s has changed status" % (url_to_check))
+                    old_status=res.status
+                else:
+                    print url_to_check, 'is still the same', url_to_check, 'and', res.status
+                    ws_db = WebServiceMonitor.objects(web_server_ip=ws[0], web_server_port=ws[1]).first()
+                    if ws_db:
+                        ws_db.status_service = res.status
+                        ws_db.response_time = response_time
+                        ws_db.successfull_calls +=1
+                        ws_db.save()
+            except httplib.BadStatusLine:
+                ws_db = WebServiceMonitor.objects(web_server_ip=ws[0], web_server_port=ws[1]).first()
+                if ws_db:
+                    ws_db.status_service = -1
+                    ws_db.save()
+                print "BAD STATUS"
+            except StandardError:
+                ws_db = WebServiceMonitor.objects(web_server_ip=ws[0], web_server_port=ws[1]).first()
+                if ws_db:
+                    ws_db.status_service = -1
+                    ws_db.save()
+                print "standard error"
 
+
+        time.sleep(5)
+
+ 
+ 
 
 def sendNotificationToLB(monitor_ip, monitor_port, ip_lb, port_lb):
     hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -105,8 +145,13 @@ if __name__ == "__main__":
 
     db = mongoengine.connect(config.health_monitor.mongo_db)
 
-    heartbeat_thread = threading.Thread(name='hb_daemon', target=heartBeatDaemon)
+    heartbeats = Heartbeats()
+    heartbeat_thread = threading.Thread(name='hb_daemon', target=heartBeatDaemon, args=([heartbeats]))
     heartbeat_thread.setDaemon(True)
     heartbeat_thread.start()
+
+    check_daemon = threading.Thread(name='checks_daemon', target=checksDaemon, args=([heartbeats]))
+    check_daemon.setDaemon(True)
+    check_daemon.start()
     sendNotificationToLB("localhost", 6000, "localhost", 8001)
     app.run(host="0.0.0.0", port=config.health_monitor.port, debug=True, use_reloader=False)

@@ -2,9 +2,8 @@ import datetime
 import mongoengine
 
 class WebServiceMIB(mongoengine.Document):
-    status_monitor = mongoengine.StringField(default="UNKNOWN") #status can be UNKNOWN, RUNNING, FAULTY, UNREACHABLE
-    status_service = mongoengine.StringField(default="UNKNOWN") #status can be UNKNOWN, RUNNING, FAULTY, UNREACHABLE
-    status_through_lb = mongoengine.StringField(default="UNKNOWN") #status can be UNKNOWN, RUNNING, FAULTY, UNREACHABLE
+    status = mongoengine.StringField(default="UNKNOWN") #status can be UNKNOWN, RUNNING, FAULTY, UNREACHABLE
+    
     response_time = mongoengine.FloatField(default=0.0)
     av_response_time = mongoengine.FloatField(default=0.0)
 
