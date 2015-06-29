@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block style %}
+<link href="static/css/xcharts.min.css" rel="stylesheet">
+<link href="static/css/iostoggle.css" rel="stylesheet">
+<link href="static/css/bootstrap-slider.css" rel="stylesheet">
+{% endblock %}
+
+
+{% block body %}
+<div class="container">
+    {% include "header.html" %}
+
+
+    <div>
+
+        <div class="col-md-12">
+
+            <h2>WebService</h2>
+
+            <li class="list-group-item">
+                <span class="title">Response time</span> {{result.result}}
+            </li>
+
+        </div>
+
+    </div>
+</div>
+{% endblock body %}
+
+{% block javascript %}
+
+<!-- Handlebars templates for sensors / actuators -->
+{% raw %}
+
+<script id="services-template" type="text/x-handlebars-template">
+    
+</script>
+{% endraw %}
+
+
+
+<!-- Javascript inclusions -->
+<script src="/static/d3/lib/d3.v3.js"></script>
+<script src="/static/d3/nv.d3.js"></script>
+<script src="/static/d3/src/utils.js"></script>
+<script src="/static/d3/src/models/axis.js"></script>
+<script src="/static/d3/src/tooltip.js"></script>
+<script src="/static/d3/src/interactiveLayer.js"></script>
+<script src="/static/d3/src/models/legend.js"></script>
+<script src="/static/d3/src/models/axis.js"></script>
+
+<script src="/static/js/xcharts.min.js"></script>
+<script src="/static/js/sigma.min.js"></script>
+<script src="/static/js/plugins/sigma.parsers.json.min.js"></script>
+
+<script src="/static/js/setup.js"></script>
+<script src="/static/js/bootstrap-slider.js"></script>
+{% endblock %}
