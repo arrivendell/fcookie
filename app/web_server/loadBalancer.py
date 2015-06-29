@@ -13,6 +13,7 @@ sys.path.append('../..')
 
 from twisted.internet import protocol
 from twisted.internet import reactor
+from twisted.internet import error
 from logger import CustomLogger
 from config import Config
 import random
@@ -132,8 +133,12 @@ class ProxyHttpServer(protocol.Protocol):
             #we log the request in one line only by removing the linebreaks
             cust_logger.info("request client: " + ' '.join(self.data.split('\r\n')) + "sent to %s:%d"%(client_param['ip'], client_param['port']))
             client = protocol.ClientCreator(reactor, ProxyHttpClient, self.transport, self.factory.servers_manager)
-            d = client.connectTCP(client_param['ip'],client_param['port'] )
-            d.addCallback(self.forwardToClient, client)
+            try:
+                #d = client.connectTCP(client_param['ip'],client_param['port'] )
+                d = client.connectTCP(client_param['ip'],client_param['port'] )
+                d.addCallback(self.forwardToClient, client)
+            except error.ConnectionRefusedError as e:
+                cust_logger.error("connection with web_server impossible: %s"%str(e))
 
     def forwardToClient(self, client, data):
         client.sendMessage(self.data)
@@ -201,9 +206,10 @@ def main():
 
     # initialize servers manager 
     possible_servers = json.load(open(config.load_bal_monitor.path_config))['possible_servers']
-    servers_manager = ServersManager(possible_servers, [possible_servers[0], possible_servers[1]])
+    in_use_servers = json.load(open(config.load_bal_monitor.path_config))['in_use_servers']
+
+    servers_manager = ServersManager(possible_servers, in_use_servers)
     
-#
 
     # start the twisted reactor
     reactor.listenUDP(8001, UdpProtocol(servers_manager))

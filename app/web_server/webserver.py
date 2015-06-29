@@ -117,9 +117,9 @@ if __name__ == "__main__":
     mib.save()
 
 
-    #http_server = HTTPServer(WSGIContainer(app))
-    #http_server.listen(source_port)
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(source_port)
     host_conf = {'ip': ip, 'port':int(source_port), 'monitor_port':int(monitor_port)}
-    #IOLoop.instance().start()
+    IOLoop.instance().start()
 
-    app.run(host="0.0.0.0", port=source_port, debug=True, use_reloader=False)
+    #app.run(host="0.0.0.0", port=source_port, debug=True, use_reloader=False)

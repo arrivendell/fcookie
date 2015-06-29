@@ -2,8 +2,8 @@
     "possible_servers": [
         {
             "ip": "localhost", 
-            "monitor_port": 5500, 
-            "port": 5100
+            "monitor_port": 9500, 
+            "port": 9000
         }, 
         {
             "ip": "localhost", 
@@ -20,5 +20,18 @@
             "monitor_port": 5503, 
             "port": 5003
         }
+    ],
+    "in_use_servers": [
+        {
+            "ip": "localhost", 
+            "monitor_port": 9500, 
+            "port": 9000
+        }, 
+        {
+            "ip": "localhost", 
+            "monitor_port": 5501, 
+            "port": 5101
+        }
+       
     ]
 }
