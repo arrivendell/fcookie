@@ -4,7 +4,7 @@ fortune cookie + health monitor
 Welcome to the guide about how to run this program.
 
 First of all, let me present the architecture of the folder :
-"app/" contains all the source code, basically splitted in two folders : 
+"app/" contains all the source code, basically split in two folders : 
 ==> "health_monitor" :
         source code related to the monitoring software, containing :
         --> the monitoring web server ("monitor.py"), which can be run whenever you want
@@ -25,7 +25,7 @@ First of all, let me present the architecture of the folder :
 
 Example of execution:
 First, find the file "config_serv.json" in the folder "app/" and set the servers how you want them to be set.
-This file represent the servers that could be used during the exection ( possible_servers) and the one that will be used from the beginning (in_use_servers)
+This file represent the servers that could be used during the execution ( possible_servers) and the one that will be used from the beginning (in_use_servers)
 According to this file, you can now launch your servers and their monitoring interface in that way :
 
 > python webserver.py -s 5000 -m 5500 (and only if add server manually to the list -l localhost:6000)
@@ -42,9 +42,10 @@ then go to the health_monitor folder and launch in the order you want :
 python monitor.py
 python monitorProcessing.py
 
-Using one terminal per script is usefull to see what is happening
+Using one terminal per script is useful to see what is happening
 
-You can connect to localhost:8000/fortune to have a fortune sentence, or to localhost:7013 tu see the monitoring interface
+You can connect to localhost:8000/fortune to have a fortune sentence, ( it should take at least 2 seconds to simulate big operation to run, there is a 2 second window to overload the proxy and see him adding servers.) 
+connect to localhost:7013 to see the monitoring interface
 Both the default ports are written in the file config.py
 
 The monitoring interface should display as many green rectangle as you have launched of web services. Click on it to see the details, 
