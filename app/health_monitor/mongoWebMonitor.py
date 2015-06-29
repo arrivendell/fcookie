@@ -1,6 +1,7 @@
 import datetime
 import mongoengine
 
+#Contains various status possibles
 class StatusWebService:
     STATUS_LOST = "UNREACHABLE"
     STATUS_BEATING = "RUNNING"
@@ -8,6 +9,7 @@ class StatusWebService:
     STATUS_UNKNOWN = "UNKNOWN"
     STATUS_UNKNOWN = "UNKNOWN"
 
+#Data representation of a web_service monitoring
 class WebServiceMonitor(mongoengine.Document):
     web_server_ip = mongoengine.StringField(required=True)
     web_server_port = mongoengine.IntField(required=True)
@@ -19,15 +21,12 @@ class WebServiceMonitor(mongoengine.Document):
     last_excpt_raised = mongoengine.StringField(default="")
     successfull_calls = mongoengine.IntField(default=0)
 
-    #def __repr__(self):
-     #   return "ip = "
-
     def __repr__(self):
         return ('<WebServiceMonitor ip={} port={} status monitor={} status service={} status \
             through lb={} response time={} last_excpt_raised = {}>'.format(self.web_server_ip, self.web_server_port, \
                 self.status_monitor, self.status_service, self.status_through_lb, self.response_time, self.last_excpt_raised))
 
-
+#Data representation of the logs in the mongoDB database
 class Logs(mongoengine.Document):
     web_server_ID = mongoengine.StringField(required=True)
     log_timestamp = mongoengine.DateTimeField(required=True)

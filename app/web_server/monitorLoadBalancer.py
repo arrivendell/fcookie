@@ -1,4 +1,6 @@
-
+#!/usr/local/bin/python
+'''To be implemented
+'''
 import string
 import sys
 import time

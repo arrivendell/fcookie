@@ -33,7 +33,7 @@ host_conf = None
 
 cust_logger = CustomLogger("web_server_%d"%os.getpid())
 
-## Main pages
+## Main pages, empty for the moment
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -46,8 +46,8 @@ def fortune():
         try:
             file_fortune = open("../"+config.fortune_service.path_file_fortunes, 'r')
             selected_line = random.choice(file_fortune.readlines()) #No close in that call since file closes automatically after call.
-            response = dict(host_conf=host_conf, result=selected_line)
-            print "line selected : " +selected_line
+            response = dict(host_conf=host_conf, result=selected_line) # we add our informations to the answer
+            cust_logger.info("line selected is " +selected_line)
         except IOError as e:
             cust_logger.error("cannot open document, I/O error({0}): {1}".format(e.errno, e.strerror))
             response = dict(host_conf=host_conf, result="error")
@@ -56,18 +56,22 @@ def fortune():
             if mib:
                 mib.last_excpt_raised = str(e)
                 mib.save()
+            return json.dumps(response), notfound
         except TypeError as e:
             cust_logger.error("I/O error({0}): {1}".format(e.errno, e.strerror))
             response = dict(host_conf=host_conf, result="error")
             mib = WebServiceMIB.objects(port=host_conf['port']).first()
             if mib:
                 mib.last_excpt_raised = str(e)
+            return json.dumps(response), notfound
         except IndexError as e:
             cust_logger.error("no lines to read, I/O error({0}): {1}".format(e.errno, e.strerror))
             response = dict(host_conf=host_conf, result="error")
             mib = WebServiceMIB.objects(port=host_conf['port']).first()
             if mib:
                 mib.last_excpt_raised = str(e)
+
+            return json.dumps(response)
         except:
             cust_logger.error( "Unexpected error:", sys.exc_info()[0] )
             response = dict(host_conf=host_conf, result="error")
@@ -80,6 +84,7 @@ def fortune():
         time.sleep(2)
 
         return json.dumps(response)
+    #not used yet
     elif request.method == 'POST':
         cust_logger.error("Unexpected post request received")
         raise TypeError
@@ -103,15 +108,18 @@ if __name__ == "__main__":
     ip = "localhost"
 
     db = mongoengine.connect("%s#%d"%(ip,source_port))
-    db.drop_database("%s#%d"%(ip,source_port))
+    #db.drop_database("%s#%d"%(ip,source_port))
     
     path_file_log = cust_logger.add_file("logWeb/%d"%source_port+"/logFweb")
-    
+
+    #we store our own condition in the database so the monitor can read it
     mib = WebServiceMIB(port = source_port, status = StatusWebService.STATUS_UP , log_file_path =  path_file_log )
     mib.save()
 
 
-    http_server = HTTPServer(WSGIContainer(app))
-    http_server.listen(source_port)
-    host_conf = {'ip': ip, 'port':int(source_port)}
-    IOLoop.instance().start()
+    #http_server = HTTPServer(WSGIContainer(app))
+    #http_server.listen(source_port)
+    host_conf = {'ip': ip, 'port':int(source_port), 'monitor_port':int(monitor_port)}
+    #IOLoop.instance().start()
+
+    app.run(host="0.0.0.0", port=source_port, debug=True, use_reloader=False)

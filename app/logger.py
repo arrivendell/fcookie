@@ -12,7 +12,7 @@ class CustomLogger:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.INFO)
 
-        self.formatter = logging.Formatter("%(asctime)s - %(levelname)s: %(message)s")
+        self.formatter = logging.Formatter("%(asctime)s - %(levelname)s:: %(message)s")
 
         self.stream = logging.StreamHandler()
         self.stream.setFormatter(self.formatter)

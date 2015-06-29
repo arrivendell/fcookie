@@ -22,22 +22,20 @@ config = Config()
 
 @app.route('/')
 def index():
-
+    '''
+        add the logs to the services and send them to the client so that the monitoring tool can be displayed.
+    '''
     services = WebServiceMonitor.objects()[:]
     services_to_send = []
-    print services
     log_string=""
     for service in services:
-        print service.web_server_ip + ':' + str(service.web_server_port)
         for log in Logs.objects(web_server_ID=service.web_server_ip + ':' + str(service.web_server_port)):
             log_string += ' '.join([datetime.strftime(log.log_timestamp, "%Y-%m-%d_%Hh%Mm%Ss"), log.log_type, log.log_content]) 
         
-        print log_string
         service_dict = dict(service_id=service.web_server_ip + ':' + str(service.web_server_port), status_monitor=service.status_monitor,
             status_service=service.status_service, status_through_lb=service.status_through_lb, response_time=service.response_time,
              last_excpt_raised=service.last_excpt_raised, logs=log_string) 
         services_to_send.append(service_dict)
-    print services_to_send
     return render_template("index.html", services = services_to_send)
 
 if __name__ == "__main__":

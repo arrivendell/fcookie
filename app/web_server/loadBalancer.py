@@ -23,6 +23,12 @@ monitors = []
 config = Config()
 
 class ServersManager:
+    '''
+        manage the different list of servers : one containing the potential servers that one can use,
+        the other containing the servers that the load balancer is using, and the last one contains the servers
+        that are available aka they are not working. An index number is stored to keep track of the last server used 
+        in the potential server. This is to be removed for a future use and replace by a non-linear management
+    '''
     def __init__(self, possible_servers, in_use_servers):
         self.available_servers = in_use_servers[:] #initialized with the in use servers
         #we show the initialization for better debug
@@ -31,9 +37,13 @@ class ServersManager:
 
         self.in_use_servers = in_use_servers
         self.possible_servers = possible_servers
-        self.number = 0
+
+        self.number = len(self.in_use_servers)-1
 
     def addServer(self):
+        '''
+            add a potential server to the in_use list. The opposite can be implemented to remove one on in_use list
+        '''
         if self.number < len(self.possible_servers) :
             self.available_servers.append(self.possible_servers[self.number+1])
             self.in_use_servers.append(self.possible_servers[self.number+1])
@@ -48,6 +58,9 @@ class ServersManager:
 
 
 class ProxyHttpClient(protocol.Protocol):
+    '''
+        interface of the proxy that sends back the data received to the client
+    '''
 
 
     def __init__(self, transport, servers_manager):
@@ -59,12 +72,13 @@ class ProxyHttpClient(protocol.Protocol):
 
     def dataReceived(self, data):
         self.data = data
+        #We try to extract the json from the http packet, strating from 1st { to the end of data.
         try :
             sender = json.loads(self.data[self.data.find('{'):])['host_conf']
         except ValueError :
             cust_logger.warning("json loading failed: %s" % self.data[self.data.find('{'):])
             return
-        sender = {'ip':sender['ip'], 'port':int(sender['port'])}
+        sender = {'ip':sender['ip'], 'port':int(sender['port']), 'monitor_port':int(sender['monitor_port'])}
         cust_logger.info("response server: " + ' '.join(self.data.split('\r\n')))
         #we check if the server sending us the answer is in the servers we use, not add him to the available list if not
         if sender not in self.servers_manager.in_use_servers:
@@ -78,7 +92,10 @@ class ProxyHttpClient(protocol.Protocol):
         self.serverTransport.loseConnection()
 
 class ProxyHttpServer(protocol.Protocol):
-  
+    '''
+        interface of the proxy that receive the data from a client and forward it to one of the server.
+        Act as a relay and load balancer
+    '''
 
     def dataReceived(self, data):
         self.data = data
@@ -92,6 +109,7 @@ class ProxyHttpServer(protocol.Protocol):
             is_empty = False
             for i in range(5):
                 if len(self.factory.servers_manager.available_servers) > 0:
+                    #choice is random but FIFO could have been used and may be better to have the load nicely shared 
                     client_param=random.choice(self.factory.servers_manager.available_servers)
                     self.factory.servers_manager.available_servers.remove(client_param)
                     is_empty = False
@@ -111,7 +129,7 @@ class ProxyHttpServer(protocol.Protocol):
 
                 self.factory.servers_manager.available_servers.remove(client_param)
             #we log the request in one line only by removing the linebreaks
-            cust_logger.info("request client: " + ' '.join(self.data.split('\r\n')))
+            cust_logger.info("request client: " + ' '.join(self.data.split('\r\n')) + "sent to %s:%d"%(client_param['ip'], client_param['port']))
             client = protocol.ClientCreator(reactor, ProxyHttpClient, self.transport, self.factory.servers_manager)
             d = client.connectTCP(client_param['ip'],client_param['port'] )
             d.addCallback(self.forwardToClient, client)
@@ -127,18 +145,25 @@ class ProxyHttpServerFactory(protocol.ServerFactory):
     def __init__(self, servers_manager):
         self.servers_manager = servers_manager
 
+
 def sendListServers(servers_manager,monitor_ip, monitor_port):
     cust_logger.info("Sending list to monitor %s:%d"%(monitor_ip, int(monitor_port)))
     udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udpSocket.sendto("list_servers#%s"%json.dumps(servers_manager.in_use_servers), (monitor_ip,int(monitor_port)))
 
+#to send our monitors to the web_services
 def sendMonitorToServers(servers_manager,monitor):
     for server in servers_manager.in_use_servers:
-        cust_logger.info("Sending monitor %s:%d to servers"%(monitor['ip'], monitor['port']))
+        cust_logger.info("Sending monitor %s:%d/%d to servers"%(monitor['ip'], monitor['port'], monitor['port_hb']))
         udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udpSocket.sendto("add_monitor#%s#%d"%(monitor['ip'], monitor['port']), (server['ip'],server['monitor_port']))
+        udpSocket.sendto("add_monitor#%s#%d#%d"%(monitor['ip'], monitor['port'], monitor['port_hb']), (server['ip'],server['monitor_port']))
 
 class UdpProtocol(protocol.DatagramProtocol):
+    '''
+        udp protocol manager that is binded and listen to a connexion. It is to be moved in a separate process since it deals with 
+        monitors managment. It also provides a way to dynamically add a server to the potential servers, by sending a specific packet
+        to the socket
+    '''
 
     def __init__(self, servers_manager):
         self.servers_manager = servers_manager
@@ -151,42 +176,30 @@ class UdpProtocol(protocol.DatagramProtocol):
             self.servers_manager.possible_servers.append({'ip': server_ip, 'port': int(server_port), 'monitor_port':int(server_monitor_port)})
         elif data.startswith("request_monitor"):
             cust_logger.info("Received packet from monitor")
-            _, monitor_ip, monitor_port = data.split('#')
-            new_monitor = dict(ip=monitor_ip, port=int(monitor_port))
+            _, monitor_ip, monitor_port, monitor_hb = data.split('#')
+            new_monitor = dict(ip=monitor_ip, port=int(monitor_port), port_hb=int(monitor_hb))
             if new_monitor not in monitors:
-                cust_logger.info("Adding new monitor %s:%d to list"%(monitor_ip, int(monitor_port)))
+                cust_logger.info("Adding new monitor %s:%d/%d to list"%(monitor_ip, int(monitor_port), int(monitor_hb)))
                 monitors.append(new_monitor)
                 sendMonitorToServers(self.servers_manager, new_monitor)
             sendListServers(self.servers_manager, monitor_ip, monitor_port)
 
 
-def monitorDaemon(servers_manager,i):
-    pass#ust_logger.info("Starting monitor Daemon")
-    #
-    #r#eactor.listenUDP(8001, UdpProtocol())
-    #r#eactor.run()
-    #c#ust_logger.info("Exiting monitor Daemon")
-#
-
 def main():
+    #Define the path to the log file
     path_file_log = cust_logger.add_file("log/logFile")
-    (opts, args) = getopt.getopt(sys.argv[1:], "s:t:h",
-        ["source=", "target=", "help"])
-    sourcePort, targetHost, targetPort, target2 = None, None, None, None
+    #we get the arguments
+    (opts, args) = getopt.getopt(sys.argv[1:], "s:h",
+        ["source=", "help"])
+    sourcePort, targetHost = None, None, 
     for option, argval in opts:
         if (option in ("-s", "--source")):
             sourcePort = int(argval)
-        if (option in ("-t", "--target")):
-            (targetHost, targetPort, target2) = string.split(argval, ":")
 
     # initialize servers manager 
     possible_servers = json.load(open(config.load_bal_monitor.path_config))['possible_servers']
     servers_manager = ServersManager(possible_servers, [possible_servers[0], possible_servers[1]])
     
-    #start daemon
-    daemon_thread = threading.Thread(name='monitor', target=monitorDaemon, args=(servers_manager,2))
-    daemon_thread.setDaemon(True)
-    daemon_thread.start()
 #
 
     # start the twisted reactor

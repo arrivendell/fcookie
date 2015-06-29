@@ -6,7 +6,7 @@ class StatusWebService:
     STATUS_BEATING = "RUNNING"
     STATUS_UP = "UP"
     STATUS_UNKNOWN = "UNKNOWN"
-
+#Data representing the web-service. Base of communication with monitor
 class WebServiceMIB(mongoengine.Document):
     port = mongoengine.IntField(required=True)
     status = mongoengine.StringField(default="UNKNOWN") #status can be UNKNOWN, RUNNING, FAULTY, UNREACHABLE
