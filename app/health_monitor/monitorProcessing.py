@@ -94,10 +94,11 @@ def heartBeatDaemon(heartbeats):
         while True:
             list_timed_out = heartbeats.listTimedOut
             for dic in list_timed_out:
-                cust_logger.info("%s:%d has timedout"%(dic['ip'],dic['port']))
                 web_service = WebServiceMonitor.objects(web_server_ip=dic['ip'], web_server_port = dic['port']).first()
-                web_service.status_monitor = StatusWebService.STATUS_LOST
-                web_service.save()
+                if web_service.status_monitor != StatusWebService.STATUS_LOST:
+                    cust_logger.info("%s:%d has timedout"%(dic['ip'],dic['port']))
+                    web_service.status_monitor=StatusWebService.STATUS_LOST
+                    web_service.save()
             time.sleep(PERIOD_CHECK_HB)
     except ValueError as e:
         cust_logger.error("HeartBeatDeamon stopped: "+ str(e))

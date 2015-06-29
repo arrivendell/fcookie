@@ -51,6 +51,7 @@ class ServersManager:
             self.number+=1
             for monitor in monitors:
                 sendListServers(self, monitor['ip'], monitor['port'])
+                sendMonitorToServers(self.servers_manager, monitor)
             return self.possible_servers[self.number]
         else :
             cust_logger.warning("No more servers to add")
@@ -174,6 +175,7 @@ class UdpProtocol(protocol.DatagramProtocol):
             cust_logger.info("Received new server notification")
             _, server_ip, server_port, server_monitor_port = data.split('#')
             self.servers_manager.possible_servers.append({'ip': server_ip, 'port': int(server_port), 'monitor_port':int(server_monitor_port)})
+            sendMonitorToServers(self.servers_manager, new_monitor)
         elif data.startswith("request_monitor"):
             cust_logger.info("Received packet from monitor")
             _, monitor_ip, monitor_port, monitor_hb = data.split('#')
@@ -181,7 +183,8 @@ class UdpProtocol(protocol.DatagramProtocol):
             if new_monitor not in monitors:
                 cust_logger.info("Adding new monitor %s:%d/%d to list"%(monitor_ip, int(monitor_port), int(monitor_hb)))
                 monitors.append(new_monitor)
-                sendMonitorToServers(self.servers_manager, new_monitor)
+            #we propagate the new in all cases for server down and up again
+            sendMonitorToServers(self.servers_manager, new_monitor)
             sendListServers(self.servers_manager, monitor_ip, monitor_port)
 
 
