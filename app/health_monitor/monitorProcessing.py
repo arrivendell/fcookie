@@ -45,7 +45,7 @@ class Heartbeats(dict):
     def listTimedOut(self):
         time_limit= time.time() - TIMEOUT_HB
         self._lock.acquire()
-        list_timed_out = [{'ip':ip, 'port':port} for (ip, port), valtime in self.items() if valtime < time_limit]
+        list_timed_out = [{'ip':ip, 'port':port, 'monitor_port':port_monitor} for (ip, port,port_monitor), valtime in self.items() if valtime < time_limit]
         self._lock.release()
         return list_timed_out
 
@@ -93,13 +93,14 @@ def heartBeatDaemon(heartbeats):
     try:
         while True:
             list_timed_out = heartbeats.listTimedOut
-            for (ip, port) in list_timed_out:
-                cust_logger.info("%s:%d has timedout"%(ip,port))
-                web_service = WebServiceMonitor.objects(web_server_ip=ip, web_server_port = port).first()
+            for dic in list_timed_out:
+                cust_logger.info("%s:%d has timedout"%(dic['ip'],dic['port']))
+                web_service = WebServiceMonitor.objects(web_server_ip=dic['ip'], web_server_port = dic['port']).first()
                 web_service.status_monitor = StatusWebService.STATUS_LOST
                 web_service.save()
             time.sleep(PERIOD_CHECK_HB)
-    except ValueError:
+    except ValueError as e:
+        cust_logger.error("HeartBeatDeamon stopped: "+ str(e))
         pass
 
 def checksDaemon(heartbeats):
@@ -115,7 +116,7 @@ def checksDaemon(heartbeats):
             if not ws_db:
                 continue
             try:     
-                connexion = httplib.HTTPConnection(url_to_check,timeout=5)
+                connexion = httplib.HTTPConnection(url_to_check,timeout=6)
                 connexion.request("GET", "/fortune")
                 time_before = time.time()
                 res = connexion.getresponse()
@@ -127,9 +128,9 @@ def checksDaemon(heartbeats):
                     if res.status == 200:
                         list_logs = Logs.objects(web_server_ID=(ws[0]+":%d"%ws[1]))
                         for log in list_logs:
-                            log.remove()
+                            log.delete()
                 else: #status is the same
-                    cust_logger.info(url_to_check, 'is still the same', url_to_check, 'and', res.status)
+                    cust_logger.info("%s remains the same with status %d"%(url_to_check,res.status))
                 
                 ws_db.status_service = res.status
                 ws_db.response_time = response_time
@@ -139,20 +140,18 @@ def checksDaemon(heartbeats):
             except httplib.BadStatusLine:
                 ws_db.status_service = -1
                 ws_db.save()
-                old_status = -1
                 cust_logger.warning("connexion ended with BAD STATUS")
 
             except StandardError as e:
                 ws_db.status_service = -1
                 ws_db.save()
-                old_status = -1
-                cust_logger.warning("connexion ended with standard Error")
+                cust_logger.warning("connexion ended with standard Error: "+str(e))
 
             #When status is not 200 but the web service monitor is alive, we ask the logs     
             if oldStatus != ws_db.status_service and ws_db.status_service != 200 and ws_db.status_monitor == StatusWebService.STATUS_BEATING:
                 cust_logger.info("Requesting logs on %s:%d"%(ws[0],ws[2]))
                 sendMessageUdpFromTo("request_logs","localhost", config.health_monitor.port_udp_process, ws[0], ws[2])
-        
+
         time.sleep(PERIOD_CHECK_STATUS)
 
 #parse a log into 3 separated fields to be stored in the database.
@@ -218,9 +217,9 @@ if __name__ == "__main__":
     check_daemon.start()
 
 
-    log_daemon = threading.Thread(name='checks_daemon', target=checksDaemon, args=([heartbeats]))
-    log_daemon.setDaemon(True)
-    log_daemon.start()
+    #log_daemon = threading.Thread(name='checks_daemon', target=checksDaemon, args=([heartbeats]))
+    #log_daemon.setDaemon(True)
+    #log_daemon.start()
 
     #we request the list of the current servers used to the loadBalancer
     sendMessageDiscovery("request_monitor","localhost", config.health_monitor.port_udp_process, config.health_monitor.port_hb, "localhost", config.load_bal_monitor.port_udp)
