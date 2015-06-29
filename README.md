@@ -4,24 +4,24 @@ fortune cookie + health monitor
 Welcome to the guide about how to run this program.
 
 First of all, let me present the architecture of the folder :
-"app/" contains all the source code, basically splitted in two folders : 
-==> "health_monitor" :
-        source code related to the monitoring software, containing :
-        --> the monitoring web server ("monitor.py"), which can be run whenever you want
-        --> the processing program that fills the database with data coming from monitored nodes (Must be lauch only if loadBalancer.py is launch)
-        --> some mongoDB documents (mongoWebMonitor.py) to represent the data displayed on the website
-        --> a script for testing this part, that must be launched after the other one in the web service folder
-        -->2 folders, "static" and "templates" containing the resources to process the html view, according to Flask architecture 
+"app/" contains all the source code, basically splitted in two folders :   
+==> "health_monitor" :  
+        source code related to the monitoring software, containing     
+        --> the monitoring web server ("monitor.py"), which can be run whenever you want  
+        --> the processing program that fills the database with data coming from monitored nodes (Must be lauch only if loadBalancer.py is launch)  
+        --> some mongoDB documents (mongoWebMonitor.py) to represent the data displayed on the website  
+        --> a script for testing this part, that must be launched after the other one in the web service folder  
+        -->2 folders, "static" and "templates" containing the resources to process the html view, according to Flask architecture   
 
-===> "web_server" :
-        source code related to the load balancer and the web service
-        --> loadBalancer.py, the load balancer with its monitoring interface included ( should be separate file in the future). Can be launched 1st or just after the web service instances
-        --> webservice.py, containing a web service using flask
-        --> webservice_falty.py, a webservice with a wrong path for the fortune file
-        -->"monitorProcessWS.py" that is the monitoring interface of the webserver
-        --> "webServiceMIB.py", where the database documents to represent the web service are defined
-        --> a script that can be run to test the whole process, but not really useful now
-        -->2 folders, "static" and "templates" containing the resources to process the html view, according to Flask architecture, and containing the "Fortunes.txt" file used to randomly send back fortune sentences 
+===> "web_server" :  
+       source code related to the load balancer and the web service  
+        --> loadBalancer.py, the load balancer with its monitoring interface included ( should be separate file in the future). Can be launched 1st or just after the web service instances  
+        --> webservice.py, containing a web service using flask  
+        --> webservice_falty.py, a webservice with a wrong path for the fortune file  
+        -->"monitorProcessWS.py" that is the monitoring interface of the webserver  
+        --> "webServiceMIB.py", where the database documents to represent the web service are defined  
+        --> a script that can be run to test the whole process, but not really useful now  
+        -->2 folders, "static" and "templates" containing the resources to process the html view, according to Flask   architecture, and containing the "Fortunes.txt" file used to randomly send back fortune sentences   
 
 Example of execution:
 First, find the file "config_serv.json" in the folder "app/" and set the servers how you want them to be set.
@@ -39,8 +39,8 @@ Now, launch the loadBalancer:
 
 then go to the health_monitor folder and launch in the order you want :
 
-python monitor.py
-python monitorProcessing.py
+> python monitor.py
+> python monitorProcessing.py
 
 Using one terminal per script is usefull to see what is happening
 
