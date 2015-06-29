@@ -27,6 +27,7 @@ PERIOD_CHECK_STATUS = 5
 def monitorDaemon():
     pass
 
+################ HEART BEAT MANAGEMENT ######################
 
 class Heartbeats(dict):
     '''
@@ -104,6 +105,9 @@ def heartBeatDaemon(heartbeats):
         cust_logger.error("HeartBeatDeamon stopped: "+ str(e))
         pass
 
+
+
+################## HTTP CONNEXIONS DAEMON ######################
 def checksDaemon(heartbeats):
     '''
         check directly the connexion http with the web service, without going through load balancing. 
@@ -163,6 +167,19 @@ def parseLog(log):
     type_log, content_log = type_content.split(":: ")
     return date_datetime, type_log, content_log
 
+
+def sendMessageUdpFromTo(header, source_ip, source_port, dest_ip, dest_port):
+    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    hbSocket.sendto(header+"#%s#%d"%(source_ip, source_port),(dest_ip, dest_port))
+
+def sendMessageDiscovery(header, source_ip, source_port, source_hb, dest_ip, dest_port):
+    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    hbSocket.sendto(header+"#%s#%d#%d"%(source_ip, source_port, source_hb),(dest_ip, dest_port))
+
+
+
+########################## LISTEN UDP ##################################
+
 #Interface to receive from outside various datagrams
 class UdpProtocol(protocol.DatagramProtocol):
     def __init__(self, heartbeats):
@@ -188,15 +205,7 @@ class UdpProtocol(protocol.DatagramProtocol):
             heartbeats = [ {(server['ip'], server['port'], server['monitor_port']) : time.time()} for server in json.loads(list_json)]
 
 
-
-def sendMessageUdpFromTo(header, source_ip, source_port, dest_ip, dest_port):
-    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    hbSocket.sendto(header+"#%s#%d"%(source_ip, source_port),(dest_ip, dest_port))
-
-def sendMessageDiscovery(header, source_ip, source_port, source_hb, dest_ip, dest_port):
-    hbSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    hbSocket.sendto(header+"#%s#%d#%d"%(source_ip, source_port, source_hb),(dest_ip, dest_port))
-
+################# MAIN ######################
 
 if __name__ == "__main__":
     #if len(sys.argv) > 1: 

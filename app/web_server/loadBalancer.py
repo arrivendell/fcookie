@@ -23,6 +23,7 @@ servers_manager = None
 monitors = []
 config = Config()
 
+###########SERVER MANAGER#################
 class ServersManager:
     '''
         manage the different list of servers : one containing the potential servers that one can use,
@@ -59,6 +60,8 @@ class ServersManager:
             raise IndexError('No more server to add')
 
 
+
+################ PROXY #########################
 class ProxyHttpClient(protocol.Protocol):
     '''
         interface of the proxy that sends back the data received to the client
@@ -95,8 +98,10 @@ class ProxyHttpClient(protocol.Protocol):
 
 class ProxyHttpServer(protocol.Protocol):
     '''
-        interface of the proxy that receive the data from a client and forward it to one of the server.
-        Act as a relay and load balancer
+        interface of the proxy that receives the data from a client and forwards it to one of the server.
+        Acts as a relay and load balancer. Each time we send a request to a web service, we remove it's id from the available
+        list. We choose among the remaining one to send the request. When we receive the response of the server,
+        we put back the id in the available list. If it reaches a length of 0, we try to wait, and then add a server if possible
     '''
 
     def dataReceived(self, data):
@@ -152,6 +157,8 @@ class ProxyHttpServerFactory(protocol.ServerFactory):
         self.servers_manager = servers_manager
 
 
+################ GENERAL ##########################
+
 def sendListServers(servers_manager,monitor_ip, monitor_port):
     cust_logger.info("Sending list to monitor %s:%d"%(monitor_ip, int(monitor_port)))
     udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -163,6 +170,10 @@ def sendMonitorToServers(servers_manager,monitor):
         cust_logger.info("Sending monitor %s:%d/%d to servers"%(monitor['ip'], monitor['port'], monitor['port_hb']))
         udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udpSocket.sendto("add_monitor#%s#%d#%d"%(monitor['ip'], monitor['port'], monitor['port_hb']), (server['ip'],server['monitor_port']))
+
+
+
+###################### Listen to udp packets #########################
 
 class UdpProtocol(protocol.DatagramProtocol):
     '''
@@ -192,6 +203,11 @@ class UdpProtocol(protocol.DatagramProtocol):
             sendMonitorToServers(self.servers_manager, new_monitor)
             sendListServers(self.servers_manager, monitor_ip, monitor_port)
 
+
+
+
+
+############## MAIN ########################
 
 def main():
     #Define the path to the log file

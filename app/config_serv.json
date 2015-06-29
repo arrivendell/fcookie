@@ -26,11 +26,6 @@
             "ip": "localhost", 
             "monitor_port": 9500, 
             "port": 9000
-        }, 
-        {
-            "ip": "localhost", 
-            "monitor_port": 5501, 
-            "port": 5101
         }
        
     ]

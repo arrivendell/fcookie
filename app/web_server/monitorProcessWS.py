@@ -31,6 +31,11 @@ PERIOD_EXCEPTION = 2
 
 cust_logger = CustomLogger("monitor_web_server_%d"%os.getpid())
 
+
+
+
+################# HEART BEAT MANAGEMENT ########################
+
 #web_listen_port is the port where the webservice listen, monitor_listen_port is the listenning port of this monitor
 def heartbeatDaemon(web_listen_port, monitor_listen_port,list_monitors):
     while True:
@@ -38,6 +43,8 @@ def heartbeatDaemon(web_listen_port, monitor_listen_port,list_monitors):
         for monitor in list_monitors:
             hbSocket.sendto("heartbeat#%d#%d"% (int(web_listen_port), int(monitor_listen_port)), (monitor['ip'],int(monitor['port_hb'])))
         time.sleep(PERIOD_BEAT)
+
+############# EXCEPTION MANAGEMENT #################################
 
 #check any update of the exception field in the database and send it to the monitors if there is a change
 def lastExceptionDaemon(web_ip, web_listen_port,list_monitors):
@@ -51,6 +58,9 @@ def lastExceptionDaemon(web_ip, web_listen_port,list_monitors):
             for monitor in list_monitors:
                 hbSocket.sendto("last_exception#%s#%d#%s"% (web_ip,int(web_listen_port), mib.last_excpt_raised), (monitor['ip'],int(monitor['port'])))
         time.sleep(PERIOD_EXCEPTION)
+
+
+########################### LISTEN UDP ##################################
 
 #Interface to receive from outside various datagrams
 class UdpProtocol(protocol.DatagramProtocol):
@@ -80,7 +90,10 @@ class UdpProtocol(protocol.DatagramProtocol):
             if new_monitor not in monitors:
                 monitors.append(new_monitor)
 
-                        
+                  
+
+########################## MAIN #######################################
+
 
 if __name__ == "__main__":
     (options, args) = getopt.getopt(sys.argv[1:], "s:m:l:h",
