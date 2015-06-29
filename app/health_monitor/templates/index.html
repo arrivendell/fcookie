@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block style %}
+<link href="static/css/xcharts.min.css" rel="stylesheet">
+<link href="static/css/iostoggle.css" rel="stylesheet">
+<link href="static/css/bootstrap-slider.css" rel="stylesheet">
+{% endblock %}
+
+
+{% block body %}
+<div class="container">
+    {% include "header.html" %}
+
+
+    <div>
+
+        <div class="col-md-12">
+
+            <h2>WebService</h2>
+
+            <ul class="services">
+                {% for service in services %}
+                <li class="services{% if ignored %} ignored{% endif %}" web-service-id="{{web_server_}}">
+                    <div class="heading">
+                        <span class="service_id">{{service.service_id}}</span>
+                        <span style="padding:20px;">{{service.ip}}</span>
+                        <span class="name">{{service.port}}</span>
+                    </div>
+
+                    <div class="details">
+                        <ul class="list-group infos">
+                            <li class="list-group-item">
+                                <span class="title"> Status of web service:</span> {{service.status_service}}
+                            </li>
+                            <li class="list-group-item">
+                                <span class="title"> Status of service monitoring:</span> {{service.status_monitor}}
+                            </li>
+
+                            <li class="list-group-item">
+                                <span class="title">Status through load balancer:</span> {{service.status_through_lb}}
+                            </li>
+
+                            <li class="list-group-item">
+                                <span class="title">Last Exception:</span> {{service.last_excpt_raised}}
+                            </li>
+
+
+                            <li class="list-group-item">
+                                <span class="title">Response time:</span> {{service.response_time}}
+                            </li>
+
+                            <li class="list-group-item">
+                               <textarea rows="12" cols="90">
+                                {{service.logs}}
+                               </textarea>
+                            </li>
+
+
+                        </ul>
+
+
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    </div>
+</div>
+{% endblock body %}
+
+{% block javascript %}
+
+
+
+
+<!-- Javascript inclusions -->
+
+<script src="/static/js/sigma.min.js"></script>
+<script src="/static/js/plugins/sigma.parsers.json.min.js"></script>
+
+<script src="/static/js/setup.js"></script>
+<script src="/static/js/bootstrap-slider.js"></script>
+{% endblock %}

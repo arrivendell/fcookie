@@ -1,0 +1,248 @@
+@font-face {
+  font-family: "OpenSans Regular";
+  src: url("../fonts/Regular/OpenSans-Regular.eot");
+  src:
+    url("../fonts/Regular/OpenSans-Regular.woff") format("woff"),
+    url("../fonts/Regular/OpenSans-Regular.otf") format("opentype"),
+    url("../fonts/Regular/OpenSans-Regular.svg") format("svg");
+}
+
+body {
+	font-family: "OpenSans Regular";
+	background: url('../img/triangles.png');
+}
+
+table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+
+/* main structure */
+#notification-bar {
+    display: none;
+
+    position: fixed;
+    z-index: 2;
+    left: 15%;
+    width: 70%;
+
+    padding: 11px;
+    margin-top: 20px;
+    border-radius: 4px;
+    background: #2D71E9;
+    color: #FFF;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+    box-shadow: 1px -1px 25px rgba(0, 0, 0, 0.3);
+    overflow-wrap: break-word;
+}
+
+
+#notification-bar.info {
+    background-color: #2980b9;
+}
+
+#notification-bar.success {
+    background-color: #27ae60;
+}
+
+#notification-bar.warning {
+    background-color: #d35400;
+}
+
+#notification-bar.error {
+    background-color: #c0392b;
+}
+
+.home-title {
+    margin: 0;
+}
+
+.container {
+	width: 100%;
+	margin: 0 auto;
+	padding: 0;
+	background: rgba(255, 255, 255, 0.9);
+	box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 0px;
+
+  background: #2B3C67;
+  color: #FFF;
+  font-weight: bold;
+  text-shadow: -1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+.header a {
+    color: inherit;
+}
+.header a:hover {
+    text-decoration: none;
+}
+
+.header .logo {
+	margin: 10px;
+	font-size: 24px;
+	text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+
+    opacity: 0.7;
+}
+
+.header .logo:hover {
+    opacity: 1;
+}
+
+.header .logo .glyphicon {
+    top: 9px;
+    font-size: 33px;
+}
+
+/* Sensors */
+
+#devices-graph {
+    height: 280px;
+    width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    margin: auto;
+    display: block;
+}
+
+.services {
+	list-style: none;
+	padding: 5px 10px;
+}
+
+
+.services li .heading{
+	background-color: rgba(39, 174, 96, 1);
+	box-shadow: 0 0 80px rgba(0, 0, 0, 0.2);
+	padding: 10px;
+
+	color: #FFF;
+	border-bottom: none;
+
+    -webkit-transition: all 0.5s ease-out;
+       -moz-transition: all 0.5s ease-out;
+        -ms-transition: all 0.5s ease-out;
+         -o-transition: all 0.5s ease-out;
+            transition: all 0.5s ease-out;
+}
+
+.services li.ignored .heading{
+    background-color: rgba(192, 57, 47, 1);
+    border-color: #DC4435;
+    color: #FF9388;
+
+}
+
+
+span.service-status {
+}
+
+.services li span.service-status-up {
+    content: "Activé";
+    background: rgb(39, 174, 96);
+}
+
+.services li.ignored span.service-status::after {
+    content: "Ignoré";
+    background: #d9534f;
+}
+
+
+.services li .details {
+    display: none;
+}
+
+.services li .details .infos .title{
+    font-weight: bold;
+}
+
+
+input.service-toggle {
+    margin-bottom: -10px;
+}
+
+.callback-binding select {
+    margin: 0 0.5%;
+    display: inline-block;
+}
+
+.callback-binding select[name="callback"]:disabled {
+    display: none;
+}
+
+.callback-binding .add {
+    margin-top: 8px;
+    color: #27ae60;
+}
+
+.callback-binding .add:hover {
+    color: #2ecc71;
+}
+
+.threshold-trigger .add {
+    margin-top: 8px;
+    color: #27ae60;
+}
+
+.threshold-trigger .add:hover {
+    color: #2ecc71;
+}
+
+
+.services .name {
+	font-size: 15px;
+	text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+	font-weight: bold;
+}
+
+.services .service_id {
+	font-size: 12px;
+	margin-right: 10px;
+}
+
+.services li .heading .glyphicon, .actuators li .glyphicon{
+	float: right;
+	text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+	opacity: 0.5;
+	color: #FFF;
+	margin: 0 3px;
+}
+
+.event-connection .delete {
+    color: #c0392b;
+}
+
+.event-connection .delete:hover {
+    color: #e74c3c;
+}
+
+.threshold-trigger .delete {
+    color: #c0392b;
+}
+
+.threshold-trigger .delete:hover {
+    color: #e74c3c;
+}
+
+.services li .glyphicon:hover, .actuators li .glyphicon:hover {
+	opacity: 1;
+}
+
+
+.services li .state-indicator {
+	color: #2ecc71;
+	text-shadow: 0px 0px 10px rgba(46, 204, 113, 0.5);
+}
+
+.service-readings{
+    width: 500px;
+    height: 200px;
+    margin: 20px auto;
+}

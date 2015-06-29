@@ -55,13 +55,16 @@ class ListenerHeartBeat(threading.Thread):
         while self.event_thread.isSet():
             try:
                 datagram, sender = self.listen_socket.recvfrom(SIZE_BUFFER_HB)
+                sender_formatted =  sender[0]
+                if sender[0]=="127.0.0.1":
+                    sender_formatted = "localhost"
                 if datagram.startswith(HB_DATAGRAM) :
                     print " received Datagram !"
                     _,port_sender, port_monitor = datagram.split('#')
-                    self.heartbeats[(sender[0], int(port_sender), int(port_monitor))] = time.time()
-                    web_service = WebServiceMonitor.objects(web_server_ip=sender[0], web_server_port = int(port_sender)).first()
+                    self.heartbeats[(sender_formatted, int(port_sender), int(port_monitor))] = time.time()
+                    web_service = WebServiceMonitor.objects(web_server_ip=sender_formatted, web_server_port = int(port_sender)).first()
                     if not web_service :
-                        web_service = WebServiceMonitor(web_server_ip=sender[0], web_server_port=int(port_sender), monitor_port=int(port_monitor))
+                        web_service = WebServiceMonitor(web_server_ip=sender_formatted, web_server_port=int(port_sender), monitor_port=int(port_monitor))
                     web_service.status_monitor = StatusWebService.STATUS_BEATING
                     web_service.save()
             except socket.timeout:
@@ -124,7 +127,7 @@ def checksDaemon(heartbeats):
                 ws_db.status_service = -1
                 ws_db.save()
                 old_status = -1
-                print "Standard error({0}): {1}".format(e.errno, e.strerror)
+                print "Standard error"
 
             #When status is not 200 but the web service monitor is alive, we ask the logs     
             if oldStatus != ws_db.status_service and ws_db.status_service != 200 and ws_db.status_monitor == StatusWebService.STATUS_BEATING:
@@ -152,7 +155,8 @@ class UdpProtocol(protocol.DatagramProtocol):
             logs_list = json.loads(logs)
             for log in logs_list:
                 date,type_log,content = parseLog(log)
-                log_to_save = Logs(web_server_ID=(host+":%d"%int(port)), log_timestamp=date, log_type=type, log_content=content )
+                log_to_save = Logs(web_server_ID=(host+":%d"%int(port)), log_timestamp=date, log_type=type_log, log_content=content )
+                log_to_save.save()
                 #print date, type_log, content
         elif data.startswith("last_exception"):
             _,host,port,exception = data.split('#')

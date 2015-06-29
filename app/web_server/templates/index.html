@@ -1,45 +1,110 @@
-<html>
+{% extends "base.html" %}
 
-<head>
-    <title>Health monitor</title>
-
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="static/favicon.ico">
-
-    <!-- Bootstrap related CSS -->
-    <link href="/static/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/css/bootstrap-select.css" rel="stylesheet">
-
-    <link href="/static/css/style.css" rel="stylesheet">
-
-    <link href="static/css/xcharts.min.css" rel="stylesheet">
-    <link href="static/css/iostoggle.css" rel="stylesheet">
-    <link href="static/css/bootstrap-slider.css" rel="stylesheet">
-
-</head>
-
-<body>
-    <div id="notification-bar"></div>
+{% block style %}
+<link href="static/css/xcharts.min.css" rel="stylesheet">
+<link href="static/css/iostoggle.css" rel="stylesheet">
+<link href="static/css/bootstrap-slider.css" rel="stylesheet">
+{% endblock %}
 
 
-    {% block body %}
-    {% endblock %}
+{% block body %}
+<div class="container">
+    {% include "header.html" %}
 
 
-    <!-- JS files, placed at the end for faster page loading -->
-    <script src="/static/js/jquery-1.10.2.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="/static/js/jquery.form.min.js"></script>
-    <script src="/static/js/bootstrap-select.js"></script>
+    <div>
 
-    <script src="/static/js/handlebars-v1.3.0.js"></script>
+        <div class="col-md-12">
 
-    <script src="static/js/header.js"></script>
-    <script src="/static/js/main.js"></script>
-    <script src="//js.leapmotion.com/0.4.0/leap.js"></script>
-    {% block javascript %}
-    {% endblock %}
+            <h2>WebService</h2>
 
-</body>
+            <ul class="webServices">
+                {% for service in services %}
+                <li class="services{% if ignored %} ignored{% endif %}" web-service-id="{{service_id}}">
+                    <div class="heading">
+                        <span class="service_id">{{service.service_id}}</span>
+                        <span style="padding:20px;">{{service.ip}}</span>
+                        <span class="name">{{service.port}}</span>
+                    </div>
 
-</html>
+                    <div class="details">
+                        <ul class="list-group infos">
+                            {{! Service s status}}
+                            <li class="list-group-item">
+                                <span class="service-status"></span> {{service.status_service}}
+                                {{!METTRE LES STATUS}}
+                            </li>
+                            {{! Service s status 2}}
+                            <li class="list-group-item">
+                                <span class="service-status"></span> {{service.status_monitor}}
+                                {{!METTRE LES STATUS}}
+                            </li>{{! Service s status 3}}
+                            <li class="list-group-item">
+                                <span class="service-status">Status:</span> {{service.status_web_service}}
+                                {{!METTRE LES STATUS}}
+                            </li>
+
+                            {{! Service last exception}}
+                            <li class="list-group-item">
+                                <span class="title">Last Exception:</span> {{service.last_excpt}}
+                            </li>
+
+
+                            {{! Service response time}}
+                            <li class="list-group-item">
+                                <span class="title">Response time</span> {{service.resp_time}}
+                            </li>
+
+
+                            {% if is_down %}
+                                <li class="list-group-item">
+                                   <textarea rows="4" cols="50">
+                                    {{service.logs}}
+                                   </textarea>
+                                </li>
+                            {% endif %}
+
+
+                        </ul>
+
+
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    </div>
+</div>
+{% endblock body %}
+
+{% block javascript %}
+
+<!-- Handlebars templates for sensors / actuators -->
+{% raw %}
+
+<script id="services-template" type="text/x-handlebars-template">
+    
+</script>
+{% endraw %}
+
+
+
+<!-- Javascript inclusions -->
+<script src="/static/d3/lib/d3.v3.js"></script>
+<script src="/static/d3/nv.d3.js"></script>
+<script src="/static/d3/src/utils.js"></script>
+<script src="/static/d3/src/models/axis.js"></script>
+<script src="/static/d3/src/tooltip.js"></script>
+<script src="/static/d3/src/interactiveLayer.js"></script>
+<script src="/static/d3/src/models/legend.js"></script>
+<script src="/static/d3/src/models/axis.js"></script>
+
+<script src="/static/js/xcharts.min.js"></script>
+<script src="/static/js/sigma.min.js"></script>
+<script src="/static/js/plugins/sigma.parsers.json.min.js"></script>
+
+<script src="/static/js/setup.js"></script>
+<script src="/static/js/bootstrap-slider.js"></script>
+{% endblock %}

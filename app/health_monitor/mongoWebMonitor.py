@@ -24,8 +24,8 @@ class WebServiceMonitor(mongoengine.Document):
 
     def __repr__(self):
         return ('<WebServiceMonitor ip={} port={} status monitor={} status service={} status \
-            through lb={} response time={} average resp time = {}>'.format(self.web_server_ip, self.web_server_port, \
-                self.status_monitor, self.status_service, self.status_through_lb, self.response_time, self.av_response_time))
+            through lb={} response time={} last_excpt_raised = {}>'.format(self.web_server_ip, self.web_server_port, \
+                self.status_monitor, self.status_service, self.status_through_lb, self.response_time, self.last_excpt_raised))
 
 
 class Logs(mongoengine.Document):

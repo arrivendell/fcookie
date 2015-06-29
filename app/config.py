@@ -11,7 +11,7 @@ class Config:
 
     class MonitorLoadBalancerConfig:
         def __init__(self):
-            self.ip = "127.0.0.1"
+            self.ip = "localhost"
             self.port=8000
             self.port_udp=8001
             self.mongo_db = "load_balancer"
@@ -20,7 +20,7 @@ class Config:
 
     class MonitorService:
         def __init__(self):
-            self.ip = "127.0.0.1"
+            self.ip = "localhost"
             self.port=7013
             self.mongo_db = "monitoring_service"
             self.port_hb = 7014

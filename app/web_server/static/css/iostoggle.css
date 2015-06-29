@@ -1,0 +1,37 @@
+.modern-toggle {
+    outline: none !important;
+    appearance: none;
+   -webkit-appearance: none;
+   -moz-appearance: none;
+    box-shadow: inset 0px 0px 0px 20px #D9534F;
+    border-radius: 15px;
+    background-color: #fff;
+    padding: 1px;
+    display: inline-block;
+    width: 52px;
+    height: 31px;
+    position: relative;
+    cursor: pointer;
+    transition: all .3s ease-out;
+    margin: 0px;
+
+    transform: scale(0.7);
+    -webkit-transform: scale(0.7); /* Adjust size here */
+}
+.modern-toggle:checked {
+    box-shadow: inset 0px 0px 0px 20px rgb(39, 174, 96);
+}
+.modern-toggle:after {
+    content: '';
+    position: absolute;
+    width: 29px;
+    height: 29px;
+    border-radius: 15px;
+    box-shadow: 0px 2px 2px 1px rgba(0,0,0,.2);
+    cursor: pointer;
+    background-color: #fff;
+    transition: all 0.1s ease-in .1s;
+}
+.modern-toggle:checked:after {
+    left: 22px;
+}
