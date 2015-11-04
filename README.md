@@ -1,5 +1,5 @@
 # fcookie
-fortune cookie + health monitor
+A fortune cookie service and its health monitor built around the structure. Goal was to build this in 3 days.
 
 Welcome to the guide about how to run this program.
 
